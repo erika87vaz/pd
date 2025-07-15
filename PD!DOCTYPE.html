@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive PD: Integrating SEL, MTSS, RtI, & PBIS</title>
+    <!-- Chosen Palette: Warm Neutrals with Teal Accent -->
+    <!-- Application Structure Plan: The application is structured into thematic, navigable sections to transform the linear slideshow into an exploratory experience. A persistent top navigation allows users to jump to any topic (Why, Frameworks, SEL, Practice, Implementation). This non-linear approach promotes user-driven learning. The "Frameworks" section uses interactive, clickable diagrams for MTSS/RtI/PBIS tiers, making abstract concepts tangible. The "Practice" section converts passive activities into interactive modules (a case study simulator for general MTSS application, an SEL tool generator, and a new MTSS scenario activity), deepening engagement and practical application. This structure was chosen to prioritize user exploration and interaction over passive content consumption, which is more effective for adult learning and professional development. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Timed Agenda -> Goal: Visualize Session Flow -> Viz/Method: Horizontal Bar Chart (Chart.js) -> Interaction: Hover for details -> Justification: More engaging than a static list, provides a clear overview of the session's pacing.
+        - Report Info: MTSS/RtI/PBIS Tiers -> Goal: Organize & Explain Hierarchy -> Viz/Method: Interactive Pyramid Diagrams (HTML/CSS/JS) -> Interaction: Click on a tier to reveal detailed information -> Justification: Turns a static diagram into an exploratory tool, reinforcing the tiered structure.
+        - Report Info: CASEL Framework (SEL) -> Goal: Inform about SEL components -> Viz/Method: Interactive Cards (HTML/CSS/JS) -> Interaction: Click card to expand with details -> Justification: A more modern and engaging way to present the five core competencies than a static wheel.
+        - Report Info: Case Study Activity (General) -> Goal: Apply knowledge -> Viz/Method: Interactive Scenario Module (JS) -> Interaction: User reads a scenario and selects interventions from options, receiving feedback -> Justification: Actively engages the user in problem-solving, moving from theory to practical application.
+        - NEW: Report Info: MTSS Tier Application Activity -> Goal: Practice identifying tiers and interventions -> Viz/Method: Interactive Scenario with Dropdowns (JS) -> Interaction: User selects tier and intervention, receives feedback -> Justification: Directly assesses understanding of MTSS tiered support application.
+        - Report Info: SEL Check-in Tool Activity -> Goal: Develop materials -> Viz/Method: SEL Tool Generator (JS) -> Interaction: User selects an age group to see a tailored example tool -> Justification: Provides a tangible, customizable takeaway, making the content immediately useful.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .nav-active { color: #0d9488; border-bottom-color: #0d9488; }
+        .nav-inactive { color: #374151; border-bottom-color: transparent; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .pyramid {
+            display: grid;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 4px;
+            width: 100%;
+            max-width: 500px;
+            margin: auto;
+        }
+        .tier {
+            clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+            padding: 2rem 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, filter 0.2s;
+        }
+        .tier:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 250px;
+            max-height: 300px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+                max-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <div class="w-full bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50">
+        <header class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <h1 class="text-xl md:text-2xl font-bold text-teal-700">Holistic Support Systems</h1>
+                <nav class="hidden md:flex space-x-4">
+                    <button data-target="home" class="nav-link nav-active font-medium border-b-2 pb-1 transition-colors">Why It Matters</button>
+                    <button data-target="frameworks" class="nav-link nav-inactive font-medium border-b-2 pb-1 transition-colors">Frameworks</button>
+                    <button data-target="sel" class="nav-link nav-inactive font-medium border-b-2 pb-1 transition-colors">The Power of SEL</button>
+                    <button data-target="practice" class="nav-link nav-inactive font-medium border-b-2 pb-1 transition-colors">Practice</button>
+                    <button data-target="implementation" class="nav-link nav-inactive font-medium border-b-2 pb-1 transition-colors">Implementation</button>
+                </nav>
+                 <div class="md:hidden">
+                    <select id="mobile-nav" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                        <option value="home">Why It Matters</option>
+                        <option value="frameworks">Frameworks</option>
+                        <option value="sel">The Power of SEL</option>
+                        <option value="practice">Practice</option>
+                        <option value="implementation">Implementation</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <!-- Section: Home -->
+        <section id="home" class="section active space-y-12">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Grounding Our Learning: Why This Matters</h2>
+                <p class="mt-4 text-lg text-stone-600">This professional development session is designed to equip general and special educators with an integrated understanding of SEL, MTSS, RtI, and PBIS. By exploring these frameworks, you'll gain practical strategies to support the whole child, fostering an environment where every student can thrive academically, socially, and emotionally.</p>
+            </div>
+
+            <div>
+                <h3 class="text-2xl font-bold text-center mb-6">Session Agenda & Flow</h3>
+                <div class="chart-container">
+                    <canvas id="agendaChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-bold mb-3 text-teal-700">Benefits for Educators</h3>
+                    <ul class="space-y-2 text-stone-700 list-disc list-inside">
+                        <li><strong>Reduced Stress:</strong> Proactive systems reduce reactive problem-solving.</li>
+                        <li><strong>Increased Efficacy:</strong> Tools and strategies to address diverse needs effectively.</li>
+                        <li><strong>Collaborative Support:</strong> Emphasizes a team approach and shared responsibility.</li>
+                        <li><strong>Professional Growth:</strong> Develop new skills and competencies in student support.</li>
+                        <li><strong>Improved Classroom Climate:</strong> Less disruption and more focus on learning.</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-bold mb-3 text-teal-700">Benefits for Students</h3>
+                    <ul class="space-y-2 text-stone-700 list-disc list-inside">
+                        <li><strong>Academic Growth:</strong> Targeted interventions lead to improved outcomes.</li>
+                        <li><strong>Social-Emotional Well-being:</strong> Development of critical life skills.</li>
+                        <li><strong>Positive Behavior:</strong> A safer, more supportive learning environment.</li>
+                        <li><strong>Equitable Access:</strong> Ensuring all students receive the support they need to succeed.</li>
+                        <li><strong>Long-Term Success:</strong> Prepares students for life beyond the classroom.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Frameworks -->
+        <section id="frameworks" class="section space-y-12">
+             <div class="text-center">
+                <h2 class="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Understanding the Core Frameworks</h2>
+                <p class="mt-4 text-lg text-stone-600">This section explores the interconnected frameworks that form a multi-tiered system of support. MTSS serves as the umbrella, with RtI and PBIS providing targeted academic and behavioral supports. Click on the tiers of each pyramid to learn more about how they function to support all students.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- MTSS -->
+                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col">
+                    <h3 class="text-2xl font-bold text-center mb-4 text-teal-700">MTSS</h3>
+                    <p class="text-center text-stone-600 mb-4">A comprehensive, integrated framework designed to address the academic, behavioral, and social-emotional learning needs of all students within an educational system.</p>
+                    <div class="pyramid" data-framework="mtss">
+                        <div class="tier bg-teal-200" data-tier="3"><strong>Tier 3: Intensive</strong></div>
+                        <div class="tier bg-teal-300" data-tier="2"><strong>Tier 2: Targeted</strong></div>
+                        <div class="tier bg-teal-400" data-tier="1"><strong>Tier 1: Universal</strong></div>
+                    </div>
+                    <div id="mtss-details" class="mt-6 p-4 bg-stone-100 rounded-lg text-sm text-stone-700 min-h-[100px]">Click a tier to see details.</div>
+                </div>
+                <!-- RtI -->
+                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col">
+                    <h3 class="text-2xl font-bold text-center mb-4 text-orange-600">RtI</h3>
+                    <p class="text-center text-stone-600 mb-4">The academic support component within MTSS.</p>
+                    <div class="pyramid" data-framework="rti">
+                        <div class="tier bg-orange-200" data-tier="3"><strong>Tier 3: Intensive</strong></div>
+                        <div class="tier bg-orange-300" data-tier="2"><strong>Tier 2: Targeted</strong></div>
+                        <div class="tier bg-orange-400" data-tier="1"><strong>Tier 1: Universal</strong></div>
+                    </div>
+                    <div id="rti-details" class="mt-6 p-4 bg-stone-100 rounded-lg text-sm text-stone-700 min-h-[100px]">Click a tier to see details.</div>
+                </div>
+                <!-- PBIS -->
+                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col">
+                    <h3 class="text-2xl font-bold text-center mb-4 text-sky-600">PBIS</h3>
+                    <p class="text-center text-stone-600 mb-4">A proactive approach to school-wide discipline that focuses on teaching and reinforcing positive behavior. It involves establishing clear expectations, providing positive reinforcement, and using data to monitor and improve school climate.</p>
+                    <div class="pyramid" data-framework="pbis">
+                        <div class="tier bg-sky-200" data-tier="3"><strong>Tier 3: Intensive</strong></div>
+                        <div class="tier bg-sky-300" data-tier="2"><strong>Tier 2: Targeted</strong></div>
+                        <div class="tier bg-sky-400" data-tier="1"><strong>Tier 1: Universal</strong></div>
+                    </div>
+                    <div id="pbis-details" class="mt-6 p-4 bg-stone-100 rounded-lg text-sm text-stone-700 min-h-[100px]">Click a tier to see details.</div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h3 class="text-2xl font-bold text-center mb-4 text-stone-800">Integrating MTSS and PBIS: A Holistic Approach</h3>
+                <p class="text-center text-stone-600 mb-4">When MTSS and PBIS are integrated, schools can create a comprehensive system of support that addresses both academic and behavioral needs. This integration involves aligning goals, sharing data, and coordinating interventions to maximize impact.</p>
+                <ul class="grid md:grid-cols-2 gap-x-8 gap-y-4 text-stone-700 list-disc list-inside px-4">
+                    <li>Improved social, emotional, and behavioral outcomes for all students, including those with disabilities.</li>
+                    <li>Reduced exclusionary discipline (e.g., office discipline referrals, suspensions).</li>
+                    <li>Increased emotional regulation and perceived school climate.</li>
+                    <li>Improved staff cohesiveness and decreased burnout for adults.</li>
+                    <li>Higher academic achievement.</li>
+                    <li>Increased attendance and reduced dropout rates.</li>
+                    <li>Lower disciplinary rates.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section: SEL (Content remains the same as previous version) -->
+        <section id="sel" class="section space-y-12">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">The Power of Social-Emotional Learning (SEL)</h2>
+                <p class="mt-4 text-lg text-stone-600">Social-Emotional Learning (SEL) is the heart of an integrated support system. It provides the foundational skills students need to engage with academic content and navigate their social world. Explore the five core competencies of the CASEL framework below.</p>
+            </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                <div class="sel-card bg-white p-6 rounded-xl shadow-md cursor-pointer transition hover:shadow-lg hover:-translate-y-1">
+                    <h3 class="font-bold text-lg text-teal-700">Self-Awareness</h3>
+                    <p class="text-sm text-stone-600 mt-2">The ability to understand one's own emotions, thoughts, and values and how they influence behavior across contexts.</p>
+                </div>
+                <div class="sel-card bg-white p-6 rounded-xl shadow-md cursor-pointer transition hover:shadow-lg hover:-translate-y-1">
+                    <h3 class="font-bold text-lg text-orange-600">Self-Management</h3>
+                    <p class="text-sm text-stone-600 mt-2">The ability to manage one's emotions, thoughts, and behaviors effectively in different situations and to achieve goals.</p>
+                </div>
+                <div class="sel-card bg-white p-6 rounded-xl shadow-md cursor-pointer transition hover:shadow-lg hover:-translate-y-1">
+                    <h3 class="font-bold text-lg text-sky-600">Social Awareness</h3>
+                    <p class="text-sm text-stone-600 mt-2">The ability to understand the perspectives of and empathize with others, including those from diverse backgrounds.</p>
+                </div>
+                <div class="sel-card bg-white p-6 rounded-xl shadow-md cursor-pointer transition hover:shadow-lg hover:-translate-y-1">
+                    <h3 class="font-bold text-lg text-purple-600">Relationship Skills</h3>
+                    <p class="text-sm text-stone-600 mt-2">The ability to establish and maintain healthy and supportive relationships and to navigate settings with diverse individuals.</p>
+                </div>
+                <div class="sel-card bg-white p-6 rounded-xl shadow-md cursor-pointer transition hover:shadow-lg hover:-translate-y-1">
+                    <h3 class="font-bold text-lg text-pink-600">Responsible Decision-Making</h3>
+                    <p class="text-sm text-stone-600 mt-2">The ability to make caring and constructive choices about personal behavior and social interactions across diverse situations.</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section: Practice -->
+        <section id="practice" class="section space-y-12">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Integration in Practice</h2>
+                <p class="mt-4 text-lg text-stone-600">This section provides interactive activities to help you apply your learning. Work through sample scenarios to practice identifying tiered supports and then explore the SEL check-in tool generator to create a resource for your classroom.</p>
+            </div>
+            
+            <!-- NEW MTSS Tier Identification Activity -->
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <h3 class="text-2xl font-bold mb-4">Activity 1: MTSS Tier Identification</h3>
+                <p class="mb-4 text-stone-600">Read the student scenario and select the most appropriate MTSS tier and a corresponding intervention. Click "Check Answer" to get feedback.</p>
+                <div id="mtss-scenario-container">
+                    <p class="mb-4"><strong>Scenario:</strong> "Maria," a 2nd-grade student, consistently struggles with basic math facts, despite receiving high-quality whole-class instruction. She often takes longer than her peers to complete simple addition and subtraction problems.</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="mtss-tier-select" class="block text-md font-medium text-stone-700">Select the most appropriate MTSS Tier:</label>
+                            <select id="mtss-tier-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md">
+                                <option value="">Choose a Tier</option>
+                                <option value="tier1">Tier 1: Universal Support</option>
+                                <option value="tier2">Tier 2: Targeted Support</option>
+                                <option value="tier3">Tier 3: Intensive Support</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="mtss-intervention-select" class="block text-md font-medium text-stone-700">Select a suitable intervention for this tier:</label>
+                            <select id="mtss-intervention-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md">
+                                <option value="">Choose an Intervention</option>
+                                <option value="universal_math_games">School-wide math fact fluency games for all students</option>
+                                <option value="small_group_math">Small-group instruction focused on specific math fact strategies</option>
+                                <option value="individual_math_tutoring">Daily one-on-one tutoring with a specialist focusing on foundational number sense</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="check-mtss-answer" class="mt-6 px-4 py-2 bg-teal-600 text-white font-semibold rounded-md shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">Check Answer</button>
+                    <div id="mtss-feedback" class="mt-6 p-4 bg-stone-100 rounded-lg text-sm text-stone-700 min-h-[50px]">Select options and click "Check Answer" for feedback.</div>
+                </div>
+            </div>
+
+            <!-- Case Study (General Application - Renamed to clarify it's a broader application) -->
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <h3 class="text-2xl font-bold mb-4">Activity 2: Comprehensive Case Study Application</h3>
+                <div id="case-study-container">
+                    <p class="mb-4"><strong>Scenario:</strong> "Leo," a 4th-grade student, frequently calls out in class, has difficulty starting assignments, and his reading scores are below grade level. He appears to have friends but struggles when asked to work in groups.</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="tier1-select" class="block text-md font-medium text-stone-700">Select a potential Tier 1 Support:</label>
+                            <select id="tier1-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md">
+                                <option value="">Choose an option</option>
+                                <option value="good">Whole-class review of behavioral expectations and routines.</option>
+                                <option value="bad">Move Leo's desk to the back of the room.</option>
+                            </select>
+                        </div>
+                         <div>
+                            <label for="tier2-select" class="block text-md font-medium text-stone-700">Select a potential Tier 2 Intervention:</label>
+                            <select id="tier2-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md">
+                               <option value="">Choose an option</option>
+                               <option value="good">Small-group reading intervention and a social skills group on collaboration.</option>
+                               <option value="bad">Assign extra homework to catch up.</option>
+                           </select>
+                        </div>
+                    </div>
+                    <div id="case-study-feedback" class="mt-6 p-4 bg-stone-100 rounded-lg text-sm text-stone-700 min-h-[50px]">Select options to see feedback.</div>
+                </div>
+            </div>
+
+            <!-- SEL Tool Generator -->
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <h3 class="text-2xl font-bold mb-4">Activity 3: SEL Check-in Tool Generator</h3>
+                <p class="mb-4 text-stone-600">Select an age group to generate an example of a simple SEL check-in tool you can adapt for your classroom.</p>
+                <div class="flex items-center space-x-4 mb-6">
+                    <label for="age-group" class="font-medium">Age Group:</label>
+                    <select id="age-group" class="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md">
+                        <option value="k-5">Grades K-5</option>
+                        <option value="6-8">Grades 6-8</option>
+                        <option value="9-12">Grades 9-12</option>
+                    </select>
+                </div>
+                <div id="sel-tool-output" class="p-6 bg-teal-50 border-2 border-dashed border-teal-200 rounded-lg">
+                    <!-- Tool will be generated here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Implementation (Content remains the same as previous version) -->
+        <section id="implementation" class="section space-y-12">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Implementation & The Role of Educators</h2>
+                <p class="mt-4 text-lg text-stone-600">Successfully implementing an integrated support system requires collaboration and clear role definition. This section outlines the pivotal responsibilities of special educators and describes how a unified approach benefits the entire school community.</p>
+            </div>
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                 <h3 class="text-2xl font-bold mb-4 text-teal-700">The Special Educator’s Pivotal Role</h3>
+                 <p class="mb-6 text-stone-600">Special educators are expert partners in the MTSS process, providing critical support in data analysis, intervention design, and collaboration. Their expertise is essential for ensuring students with the most intensive needs receive appropriate and effective support.</p>
+                 <ul class="grid md:grid-cols-2 gap-x-8 gap-y-4 text-stone-700 list-disc list-inside">
+                     <li><strong>Assessment & Data Analysis:</strong> Conducting specialized assessments and interpreting data to identify specific student needs.</li>
+                     <li><strong>Intervention Design:</strong> Developing and implementing highly individualized Tier 3 interventions.</li>
+                     <li><strong>Collaboration & Consultation:</strong> Partnering with general educators to adapt instruction and implement strategies.</li>
+                     <li><strong>Progress Monitoring:</strong> Systematically tracking student progress to make data-driven adjustments.</li>
+                     <li><strong>Behavioral Expertise:</strong> Developing PBSPs and conducting Functional Behavior Assessments (FBAs).</li>
+                     <li><strong>Advocacy:</strong> Ensuring students with disabilities receive all necessary services and accommodations.</li>
+                 </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-800 text-white mt-12">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
+            <p>Professional Development Resource | &copy; 2025</p>
+            <p class="text-sm text-stone-400 mt-2">This interactive application is a representation of the provided PD outline.</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    
+    const sections = document.querySelectorAll('.section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const mobileNav = document.getElementById('mobile-nav');
+
+    const frameworkDetails = {
+        mtss: {
+            1: '<strong>Universal Support (Tier 1):</strong> This is the foundation of the system, provided to all students school-wide. Focuses on proactive prevention and high-quality, research-based instruction. Aims to meet the needs of approximately 80% of students.',
+            2: '<strong>Targeted Support (Tier 2):</strong> Designed for some students who are at risk or do not respond adequately to Tier 1. Involves additional, targeted instruction often delivered at the individual or small-group level. Students may move up and down between tiers as data suggests their needs change.',
+            3: '<strong>Intensive Support (Tier 3):</strong> Provides intensive, individualized support for a few students who are non-responsive to primary and secondary interventions, or who exhibit severe and persistent behaviors. It is more resource-intensive and often involves ongoing daily support.'
+        },
+        rti: {
+            1: '<strong>Tier 1: Universal interventions.</strong> Available to all students in a classroom or school. Can consist of whole-group or individual strategies or supports. (From RTI Pyramid of Interventions)',
+            2: '<strong>Tier 2: Individualized interventions.</strong> Subset of students receive interventions targeting specific needs. (From RTI Pyramid of Interventions)',
+            3: '<strong>Tier 3: Intensive interventions.</strong> Students who are \'non-responders\' to Tiers 1 & 2 are referred to the RTI Team for more intensive interventions. (From RTI Pyramid of Interventions)'
+        },
+        pbis: {
+            1: '<strong>Universal Expectations (Tier 1):</strong> Clearly defined and taught behavioral expectations for all students in all school settings (e.g., "Be Safe, Be Respectful").',
+            2: '<strong>Targeted Interventions (Tier 2):</strong> Check-in/Check-out systems, social skills groups, and structured mentoring for students with recurring behavior issues.',
+            3: '<strong>Intensive Interventions (Tier 3):</strong> Functional Behavior Assessment (FBA) and individualized Positive Behavior Support Plans (PBSP) for students with severe behavioral challenges.'
+        }
+    };
+
+    function showSection(targetId) {
+        sections.forEach(section => {
+            section.classList.toggle('active', section.id === targetId);
+        });
+
+        navLinks.forEach(link => {
+            link.classList.toggle('nav-active', link.dataset.target === targetId);
+            link.classList.toggle('nav-inactive', link.dataset.target !== targetId);
+        });
+        
+        if (mobileNav.value !== targetId) {
+            mobileNav.value = targetId;
+        }
+    }
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => showSection(link.dataset.target));
+    });
+    
+    mobileNav.addEventListener('change', (e) => showSection(e.target.value));
+
+    document.querySelectorAll('.pyramid').forEach(pyramid => {
+        pyramid.addEventListener('click', (e) => {
+            const tierEl = e.target.closest('.tier');
+            if (tierEl) {
+                const framework = pyramid.dataset.framework;
+                const tier = tierEl.dataset.tier;
+                const detailsBox = document.getElementById(`${framework}-details`);
+                detailsBox.innerHTML = frameworkDetails[framework][tier];
+            }
+        });
+    });
+
+    const ageGroupSelect = document.getElementById('age-group');
+    const selToolOutput = document.getElementById('sel-tool-output');
+    
+    const selTools = {
+        'k-5': `
+            <h4 class="font-bold text-lg mb-2">Mood Meter (Grades K-5)</h4>
+            <p class="mb-4 text-sm">Use a chart with emojis for happy, sad, angry, tired, excited. Students place a clothespin or sticky note with their name on the emoji that matches their feeling.</p>
+            <div class="flex justify-around items-center text-4xl"><span>😊</span><span>😟</span><span>😠</span><span>😴</span><span>🎉</span></div>
+        `,
+        '6-8': `
+            <h4 class="font-bold text-lg mb-2">One-Word Check-in (Grades 6-8)</h4>
+            <p class="text-sm">As a bell-ringer, have students write down one word on a sticky note that describes how they are feeling today and post it on a designated board as they walk in.</p>
+        `,
+        '9-12': `
+            <h4 class="font-bold text-lg mb-2">Digital Poll Check-in (Grades 9-12)</h4>
+            <p class="text-sm">Use a quick, anonymous digital poll (e.g., Google Forms, Mentimeter) with a question like: "On a scale of 1-5, how is your energy/focus level today?" This respects privacy while gathering data.</p>
+        `
+    };
+
+    function updateSelTool() {
+        selToolOutput.innerHTML = selTools[ageGroupSelect.value];
+    }
+    ageGroupSelect.addEventListener('change', updateSelTool);
+    updateSelTool(); 
+
+    const caseStudyFeedback = document.getElementById('case-study-feedback');
+    document.getElementById('tier1-select').addEventListener('change', function(e) {
+        if (e.target.value === 'good') {
+            caseStudyFeedback.innerHTML = '<strong>Tier 1 Feedback:</strong> Correct. Reviewing expectations for everyone is a strong universal support that benefits all students and doesn\'t single anyone out.';
+            caseStudyFeedback.className = 'mt-6 p-4 bg-green-100 rounded-lg text-sm text-green-800 min-h-[50px]';
+        } else if (e.target.value === 'bad') {
+             caseStudyFeedback.innerHTML = '<strong>Tier 1 Feedback:</strong> This could be an outcome, but it is not a proactive Tier 1 support. Isolation can sometimes worsen behavior and does not teach replacement skills.';
+             caseStudyFeedback.className = 'mt-6 p-4 bg-red-100 rounded-lg text-sm text-red-800 min-h-[50px]';
+        } else {
+            caseStudyFeedback.innerHTML = 'Select options to see feedback.';
+            caseStudyFeedback.className = 'mt-6 p-4 bg-stone-100 rounded-lg text-sm text-stone-700 min-h-[50px]';
+        }
+    });
+     document.getElementById('tier2-select').addEventListener('change', function(e) {
+        if (e.target.value === 'good') {
+            caseStudyFeedback.innerHTML = '<strong>Tier 2 Feedback:</strong> Excellent. This addresses both his academic (reading) and behavioral/social (group work) needs with targeted, small-group interventions.';
+            caseStudyFeedback.className = 'mt-6 p-4 bg-green-100 rounded-lg text-sm text-green-800 min-h-[50px]';
+        } else if (e.target.value === 'bad') {
+             caseStudyFeedback.innerHTML = '<strong>Tier 2 Feedback:</strong> This approach may increase Leo\'s frustration without addressing the root cause of his academic and behavioral struggles.';
+             caseStudyFeedback.className = 'mt-6 p-4 bg-red-100 rounded-lg text-sm text-red-800 min-h-[50px]';
+        } else {
+            caseStudyFeedback.innerHTML = 'Select options to see feedback.';
+            caseStudyFeedback.className = 'mt-6 p-4 bg-stone-100 rounded-lg text-sm text-stone-700 min-h-[50px]';
+        }
+    });
+
+    // NEW MTSS Tier Identification Activity Logic
+    const mtssTierSelect = document.getElementById('mtss-tier-select');
+    const mtssInterventionSelect = document.getElementById('mtss-intervention-select');
+    const checkMtssAnswerBtn = document.getElementById('check-mtss-answer');
+    const mtssFeedback = document.getElementById('mtss-feedback');
+
+    checkMtssAnswerBtn.addEventListener('click', () => {
+        const selectedTier = mtssTierSelect.value;
+        const selectedIntervention = mtssInterventionSelect.value;
+
+        if (!selectedTier || !selectedIntervention) {
+            mtssFeedback.innerHTML = 'Please select both a Tier and an Intervention.';
+            mtssFeedback.className = 'mt-6 p-4 bg-yellow-100 rounded-lg text-sm text-yellow-800 min-h-[50px]';
+            return;
+        }
+
+        if (selectedTier === 'tier2' && selectedIntervention === 'small_group_math') {
+            mtssFeedback.innerHTML = '<strong>Correct!</strong> Maria\'s consistent struggle despite Tier 1 instruction suggests a need for targeted Tier 2 support, like small-group math instruction.';
+            mtssFeedback.className = 'mt-6 p-4 bg-green-100 rounded-lg text-sm text-green-800 min-h-[50px]';
+        } else if (selectedTier === 'tier1' && selectedIntervention === 'universal_math_games') {
+            mtssFeedback.innerHTML = '<strong>Not quite.</strong> While universal games are good for Tier 1, Maria is already struggling *despite* Tier 1. She likely needs something more targeted.';
+            mtssFeedback.className = 'mt-6 p-4 bg-red-100 rounded-lg text-sm text-red-800 min-h-[50px]';
+        } else if (selectedTier === 'tier3' && selectedIntervention === 'individual_math_tutoring') {
+            mtssFeedback.innerHTML = '<strong>Not quite.</strong> Tier 3 is for very intensive needs after Tier 2 has been attempted. Maria\'s current struggle suggests a Tier 2 intervention is the next logical step.';
+            mtssFeedback.className = 'mt-6 p-4 bg-red-100 rounded-lg text-sm text-red-800 min-h-[50px]';
+        } else {
+            mtssFeedback.innerHTML = '<strong>Incorrect.</strong> Re-evaluate Maria\'s needs and the purpose of each MTSS tier.';
+            mtssFeedback.className = 'mt-6 p-4 bg-red-100 rounded-lg text-sm text-red-800 min-h-[50px]';
+        }
+    });
+
+
+    const ctx = document.getElementById('agendaChart').getContext('2d');
+    const agendaChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Why It Matters', 'Frameworks', 'The Power of SEL', 'Practice & Activities', 'Q&A / Next Steps'],
+            datasets: [{
+                label: 'Time (minutes)',
+                data: [45, 60, 45, 60, 15],
+                backgroundColor: [
+                    'rgba(13, 148, 136, 0.6)', // teal-600
+                    'rgba(234, 88, 12, 0.6)', // orange-600
+                    'rgba(2, 132, 199, 0.6)', // sky-600
+                    'rgba(147, 51, 234, 0.6)', // purple-600
+                    'rgba(107, 114, 128, 0.6)' // gray-500
+                ],
+                borderColor: [
+                    'rgba(13, 148, 136, 1)',
+                    'rgba(234, 88, 12, 1)',
+                    'rgba(2, 132, 199, 1)',
+                    'rgba(147, 51, 234, 1)',
+                    'rgba(107, 114, 128, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.raw} mins`;
+                        }
+                    }
+                },
+                 title: {
+                    display: true,
+                    text: 'Professional Development Session Flow'
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Duration (minutes)'
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html>
